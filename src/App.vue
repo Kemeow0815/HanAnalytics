@@ -4,9 +4,9 @@
       <div class="main">
         <div class="logo">
           <img src="./assets/favicon.ico">
-          <span>Han Analytics</span>
+          <span>KeMiao Analytics</span>
         </div>
-        <h2>简单优雅的Web分析</h2>
+        <h2>克喵的网站分析</h2>
       </div>
     </header>
     <main>

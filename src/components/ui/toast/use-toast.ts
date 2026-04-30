@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { Component, VNode } from 'vue'
+import type { Component, VNode, ComputedRef } from 'vue'
 import type { ToastProps } from '.'
 
 const TOAST_LIMIT = 1
@@ -78,9 +78,11 @@ const state = ref<State>({
 
 function dispatch(action: Action) {
   switch (action.type) {
-    case actionTypes.ADD_TOAST:
+    case actionTypes.ADD_TOAST: {
+      // @ts-ignore - Type instantiation is excessively deep and possibly infinite
       state.value.toasts = [action.toast, ...state.value.toasts].slice(0, TOAST_LIMIT)
       break
+    }
 
     case actionTypes.UPDATE_TOAST:
       state.value.toasts = state.value.toasts.map(t =>
@@ -121,17 +123,15 @@ function dispatch(action: Action) {
   }
 }
 
-function useToast() {
-  return {
-    toasts: computed(() => state.value.toasts),
-    toast,
-    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
-  }
-}
-
 type Toast = Omit<ToasterToast, 'id'>
 
-function toast(props: Toast) {
+interface ToastReturn {
+  id: string
+  dismiss: () => void
+  update: (props: ToasterToast) => void
+}
+
+function toast(props: Toast): ToastReturn {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -162,4 +162,19 @@ function toast(props: Toast) {
   }
 }
 
+interface UseToastReturn {
+  toasts: ComputedRef<ToasterToast[]>
+  toast: (props: Toast) => ToastReturn
+  dismiss: (toastId?: string) => void
+}
+
+function useToast(): UseToastReturn {
+  return {
+    toasts: computed(() => state.value.toasts),
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+  }
+}
+
 export { toast, useToast }
+export type { Toast, ToasterToast }

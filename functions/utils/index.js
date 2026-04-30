@@ -36,6 +36,10 @@ export const formatTime = (timeStr, tz) => {
 
 // 次数统计
 export const countData = (arr, key, keyType, status = true) => {
+  // 处理空数据
+  if (!arr || !Array.isArray(arr) || arr.length === 0) {
+    return [];
+  }
   // 处理JS中对象无序排列问题
   const _StringKey = status ? "" : `-_-www.vvhan.com-_-`;
   let res = arr.reduce((_arr, v) => {
@@ -90,6 +94,10 @@ export const echartsData = (data, key, tz) => {
   // key=30 过去30天
   // key=60 过去60天
   // key=90 过去90天
+  // 处理空数据
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return [];
+  }
   let timeArr = [];
   switch (key) {
     case "today":

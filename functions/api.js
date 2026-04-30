@@ -24,6 +24,6 @@ export async function onRequest({ request, env }) {
     const data = await vh_INIT(env, time, siteID, tz, type);
     return Response.json({ success: true, data }, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*" } });
   } catch (error) {
-    return Response.json({ success: false, error }, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*" } });
+    return Response.json({ success: false, message: error.message || String(error), stack: error.stack }, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "*", "Access-Control-Allow-Headers": "*" } });
   }
 }

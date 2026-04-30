@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { Component, VNode, ComputedRef } from 'vue'
+import type { Component, VNode } from 'vue'
 import type { ToastProps } from '.'
 
 const TOAST_LIMIT = 1
@@ -79,14 +79,14 @@ const state = ref<State>({
 function dispatch(action: Action) {
   switch (action.type) {
     case actionTypes.ADD_TOAST: {
-      // @ts-ignore - Type instantiation is excessively deep and possibly infinite
-      state.value.toasts = [action.toast, ...state.value.toasts].slice(0, TOAST_LIMIT)
+      const newToasts = [action.toast, ...(state.value.toasts as any[])] as any
+      state.value.toasts = newToasts.slice(0, TOAST_LIMIT)
       break
     }
 
     case actionTypes.UPDATE_TOAST:
-      state.value.toasts = state.value.toasts.map(t =>
-        t.id === action.toast.id ? { ...t, ...action.toast } : t,
+      state.value.toasts = (state.value.toasts as any[]).map((t: any) =>
+        t.id === (action.toast as any).id ? { ...t, ...(action.toast as any) } : t,
       )
       break
 
@@ -97,12 +97,12 @@ function dispatch(action: Action) {
         addToRemoveQueue(toastId)
       }
       else {
-        state.value.toasts.forEach((toast) => {
+        state.value.toasts.forEach((toast: any) => {
           addToRemoveQueue(toast.id)
         })
       }
 
-      state.value.toasts = state.value.toasts.map(t =>
+      state.value.toasts = (state.value.toasts as any[]).map((t: any) =>
         t.id === toastId || toastId === undefined
           ? {
               ...t,
@@ -117,21 +117,23 @@ function dispatch(action: Action) {
       if (action.toastId === undefined)
         state.value.toasts = []
       else
-        state.value.toasts = state.value.toasts.filter(t => t.id !== action.toastId)
+        state.value.toasts = (state.value.toasts as any[]).filter((t: any) => t.id !== action.toastId)
 
       break
   }
 }
 
-type Toast = Omit<ToasterToast, 'id'>
-
-interface ToastReturn {
-  id: string
-  dismiss: () => void
-  update: (props: ToasterToast) => void
+function useToast(): { toasts: any, toast: typeof toast, dismiss: (toastId?: string) => void } {
+  return {
+    toasts: computed(() => state.value.toasts),
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+  }
 }
 
-function toast(props: Toast): ToastReturn {
+type Toast = Omit<ToasterToast, 'id'>
+
+function toast(props: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -162,19 +164,4 @@ function toast(props: Toast): ToastReturn {
   }
 }
 
-interface UseToastReturn {
-  toasts: ComputedRef<ToasterToast[]>
-  toast: (props: Toast) => ToastReturn
-  dismiss: (toastId?: string) => void
-}
-
-function useToast(): UseToastReturn {
-  return {
-    toasts: computed(() => state.value.toasts),
-    toast,
-    dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
-  }
-}
-
 export { toast, useToast }
-export type { Toast, ToasterToast }

@@ -4,26 +4,21 @@ export const vh_INIT = async (env, time, siteID, tz, type = null) => {
   // 查询
   const defaultHeaders = { "content-type": "application/json;charset=UTF-8", "X-Source": "Cloudflare-Workers", Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` };
   const defaultUrl = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`;
-  const timeFilter = formatTime(time, tz);
-  const SQL_WHERE = `FROM AnalyticsDataset WHERE timestamp >= ${timeFilter} AND blob1 = '${siteID}'`;
-  console.log(`[DEBUG] Type: ${type}, SiteID: ${siteID}, Time: ${time}, TimeFilter: ${timeFilter}`);
+  const SQL_WHERE = `FROM AnalyticsDataset WHERE timestamp >= ${formatTime(time, tz)} AND blob1 = '${siteID}'`;
   let resJSON;
   switch (type) {
     // 获取数据
     case "visit":
       {
         const query = `SELECT SUM(_sample_interval) AS views, SUM(IF(double1 = '1', double1, 0.0)) AS visitor, SUM(IF(double2 = '1', double2, 0.0)) AS visit ${SQL_WHERE}`;
-        console.log(`[DEBUG] Visit Query: ${query}`);
         const res = await fetch(defaultUrl, { method: "POST", body: query, headers: defaultHeaders });
-        const result = await res.json();
-        console.log(`[DEBUG] Visit Result:`, JSON.stringify(result));
-        const { data } = result;
+        const { data } = await res.json();
         const row = (data && data[0]) || { views: 0, visitor: 0, visit: 0 };
         const { visitor, visit, views } = row;
-        resJSON = { 
-          visitor: visitor >= 1000 ? `${(visitor / 1000).toFixed(1)}K` : visitor || 0, 
-          visit: visit >= 1000 ? `${(visit / 1000).toFixed(1)}K` : visit || 0, 
-          views: Number(views) >= 1000 ? `${(Number(views) / 1000).toFixed(1)}K` : Number(views) || 0 
+        resJSON = {
+          visitor: visitor >= 1000 ? `${(visitor / 1000).toFixed(1)}K` : visitor || 0,
+          visit: visit >= 1000 ? `${(visit / 1000).toFixed(1)}K` : visit || 0,
+          views: Number(views) >= 1000 ? `${(Number(views) / 1000).toFixed(1)}K` : Number(views) || 0
         };
       }
       break;
@@ -32,11 +27,8 @@ export const vh_INIT = async (env, time, siteID, tz, type = null) => {
     case "list":
       {
         const query = "SELECT blob1 FROM AnalyticsDataset GROUP BY blob1";
-        console.log(`[DEBUG] List Query: ${query}`);
         const res = await fetch(defaultUrl, { method: "POST", body: query, headers: defaultHeaders });
-        const result = await res.json();
-        console.log(`[DEBUG] List Result:`, JSON.stringify(result));
-        const { data } = result;
+        const { data } = await res.json();
         // 校验白名单
         if (env.CLOUDFLARE_WEBSITE_WHITELIST) {
           const websiteArr = env.CLOUDFLARE_WEBSITE_WHITELIST.split("|");
@@ -47,7 +39,10 @@ export const vh_INIT = async (env, time, siteID, tz, type = null) => {
             .map((i) => i.blob1)
             .reverse();
         } else {
-          resJSON = (data || []).map((i) => i.blob1).reverse().slice(0, 100);
+          resJSON = (data || [])
+            .map((i) => i.blob1)
+            .reverse()
+            .slice(0, 100);
         }
         console.log(`[DEBUG] List Result JSON:`, resJSON);
       }
